@@ -1,16 +1,22 @@
 (ns sdb_gui.core
-  (:import (javax.swing JFrame JPanel JButton JOptionPane JLabel))
+  (:import (javax.swing JFrame JSplitPane))
+  (:import (javax.swing JTextArea))
+  (:import (java.awt BorderLayout))
   (:import (com.explodingpixels.macwidgets SourceList
                                            SourceListModel
                                            SourceListItem
-                                           SourceListCategory)))
+                                           SourceListCategory
+                                           SourceListControlBar
+                                           MacWidgetFactory
+                                           MacIcons))
+  (:import (com.jgoodies.forms.layout FormLayout)))
 
 (defmacro on-action [component event & body]
   `(. ~component addActionListener
       (proxy [java.awt.event.ActionListener] []
         (actionPerformed [~event] ~@body))))
 
-(defn source-list []
+(defn create-source-list []
   (let [category (SourceListCategory. "Category")
         model    (doto (SourceListModel.)
                    (.addCategory category)
@@ -21,13 +27,23 @@
                    (.addItemToCategory (SourceListItem. "Item 5") category))]
     (SourceList. model)))
 
+
 (defn hello-app []
-  (let [sl      (source-list)
-        frame   (doto (JFrame. "Source List Frame")
-                  (.setSize 400 400)
-                  (.setContentPane (.getComponent sl))
-                  (.setVisible true))]
-        frame))
+  (let [control-bar (doto (SourceListControlBar.)
+                      (.createAndAddButton MacIcons/PLUS nil)
+                      (.createAndAddButton MacIcons/MINUS nil))
+        source-list (doto (create-source-list)
+                      (.installSourceListControlBar control-bar))
+        split-pane  (doto (. MacWidgetFactory createSplitPaneForSourceList
+                             source-list
+                             (JTextArea.))
+                      (.setDividerLocation 200))
+        frame       (doto (JFrame. "Source List Frame")
+                      (.add split-pane BorderLayout/CENTER)
+                      (.setSize 600 400)
+                      (.setVisible true))]
+    (.installDraggableWidgetOnSplitPane control-bar split-pane)))
+
 
 (defn -main [& args]
   (hello-app))
