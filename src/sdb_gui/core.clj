@@ -11,10 +11,10 @@
                                            MacIcons))
   (:import (com.jgoodies.forms.layout FormLayout)))
 
-(defmacro on-action [component event & body]
-  `(. ~component addActionListener
-      (proxy [java.awt.event.ActionListener] []
-        (actionPerformed [~event] ~@body))))
+;; (defmacro on-action [component event & body]
+;;   `(. ~component addActionListener
+;;       (proxy [java.awt.event.ActionListener] []
+;;         (actionPerformed [~event] ~@body))))
 
 (defn create-source-list []
   (let [category (SourceListCategory. "Category")
@@ -26,7 +26,6 @@
                    (.addItemToCategory (SourceListItem. "Item 4") category)
                    (.addItemToCategory (SourceListItem. "Item 5") category))]
     (SourceList. model)))
-
 
 (defn hello-app []
   (let [control-bar (doto (SourceListControlBar.)
