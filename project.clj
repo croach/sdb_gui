@@ -4,5 +4,5 @@
                  [com.jgoodies/forms "1.2.1"]
                  [com.kenai.nbpwr/com-explodingpixels-macwidgets
                   "0.9.5-201002261215"]
-                 [org.clojars.tltjr/aws-java-sdk "1.1.7.1"]]
+                 [com.cemerick/rummage "0.0.3"]]
   :main sdb_gui.core)
