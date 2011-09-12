@@ -1,5 +1,5 @@
-(ns sdb_gui.preferences
-  (:import '(java.util.prefs Preferences)))
+(ns sdb_gui.accounts
+  (:import (java.util.prefs Preferences)))
 
 (def root     (.node (Preferences/userRoot) "sdb_gui"))
 (def accounts (.node root "accounts"))
