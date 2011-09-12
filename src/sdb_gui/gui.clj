@@ -1,65 +1,50 @@
 (ns sdb_gui.gui
-  (:import (javax.swing JFrame JSplitPane))
-  (:import (javax.swing JTextArea))
-  (:import (java.awt BorderLayout))
+  (:use (seesaw core mig))
+  (:use (sdb_gui accounts))
+  (:import (javax.swing JSplitPane))
   (:import (com.explodingpixels.macwidgets SourceList
                                            SourceListModel
                                            SourceListItem
                                            SourceListCategory
                                            SourceListControlBar
                                            MacWidgetFactory
-                                           MacIcons))
-  (:import (com.jgoodies.forms.layout FormLayout)))
-
-;; (defmacro on-action [component event & body]
-;;   `(. ~component addActionListener
-;;       (proxy [java.awt.event.ActionListener] []
-;;         (actionPerformed [~event] ~@body))))
+                                           MacIcons)))
 
 (defn create-source-list []
-  (let [category (SourceListCategory. "Category")
+  (let [category (SourceListCategory. "Accounts")
         model    (doto (SourceListModel.)
-                   (.addCategory category)
-                   (.addItemToCategory (SourceListItem. "Item 1") category)
-                   (.addItemToCategory (SourceListItem. "Item 2") category)
-                   (.addItemToCategory (SourceListItem. "Item 3") category)
-                   (.addItemToCategory (SourceListItem. "Item 4") category)
-                   (.addItemToCategory (SourceListItem. "Item 5") category))]
+                   (.addCategory category))
+        accounts (get-account-names)]
+    (doseq [account-name accounts]
+      (.addItemToCategory model (SourceListItem. account-name) category))
     (SourceList. model)))
 
+(defn edit-account-panel []
+  (mig-panel
+   :constraints ["wrap, center, center"
+                 "[shrink, right] 10 [left]"
+                 ""]
+   :items [["Name"] [(text :id :account-name) "width 300!"]
+           ["AWS Access Key"] [(text :id :aws-access-key) "width 300!"]
+           ["AWS Secret Key"] [(text :id :aws-secret-key) "width 300!"]]))
+
 (defn create-gui []
-  (let [frame       (JFrame. "SDB Viewer")
-        control-bar (SourceListControlBar.)
+  (let [control-bar (SourceListControlBar.)
         source-list (create-source-list)
         split-pane  (. MacWidgetFactory createSplitPaneForSourceList
                        source-list
-                       (JTextArea.))]
+                       (edit-account-panel))
+        mainframe   (frame
+                     :title    "SDB Viewer"
+                     :content  split-pane
+                     :size     [700 :by 400]
+                     :on-close :exit)]
     (doto control-bar
-      (.createAndAddButton MacIcons/PLUS nil)
+      (.createAndAddButton
+       MacIcons/PLUS (action
+                      :handler (fn [e] (println "Adding an account"))))
       (.createAndAddButton MacIcons/MINUS nil)
       (.installDraggableWidgetOnSplitPane split-pane))
     (.installSourceListControlBar source-list control-bar)
-    (.setDividerLocation split-pane 200)
-    (doto frame
-      (.add split-pane BorderLayout/CENTER)
-      (.setSize 600 400)
-      (.setVisible true))
-    frame))
-
-
-
-;; (defn create-gui []
-;;   (let [control-bar (doto (SourceListControlBar.)
-;;                       (.createAndAddButton MacIcons/PLUS nil)
-;;                       (.createAndAddButton MacIcons/MINUS nil))
-;;         source-list (doto (create-source-list)
-;;                       (.installSourceListControlBar control-bar))
-;;         split-pane  (doto (. MacWidgetFactory createSplitPaneForSourceList
-;;                              source-list
-;;                              (JTextArea.))
-;;                       (.setDividerLocation 200))
-;;         frame       (doto (JFrame. "Source List Frame")
-;;                       (.add split-pane BorderLayout/CENTER)
-;;                       (.setSize 600 400)
-;;                       (.setVisible true))]
-;;     (.installDraggableWidgetOnSplitPane control-bar split-pane)))
+    (.setDividerLocation split-pane 250)
+    (show! mainframe)))
