@@ -32,8 +32,9 @@
   (let [content-panel (select mainframe [:#content-panel])]
     (show-card! content-panel :account)))
 
-
 (defn create-source-list
+  "Creates the source list (aka, sidebar tree view) and populates it
+   with all of the user's AWS accounts"
   [control-bar]
   (let [category (SourceListCategory. "Accounts")
         model    (doto (SourceListModel.)
@@ -45,6 +46,7 @@
       (.installSourceListControlBar control-bar))))
 
 (defn create-control-bar
+  "Creates the control bar along the bottom of the source list"
   [mainframe]
   (doto (SourceListControlBar.)
     (.createAndAddButton
@@ -55,6 +57,8 @@
      (action :handler (fn [e] (println "Removing an account"))))))
 
 (defn create-content-panel []
+  "Creates the main content panel of the application which is a card layout
+   panel holding several different views"
   (card-panel
    :id :content-panel
    :items
@@ -62,6 +66,8 @@
     [(edit-account-panel) :account]]))
 
 (defn create-split-pane
+  "Creates the split pane that holds the main content panel and the source
+   list"
   [source-list content-panel]
   (doto (. MacWidgetFactory createSplitPaneForSourceList
            source-list
@@ -84,7 +90,6 @@
     (.installDraggableWidgetOnSplitPane control-bar split-pane)
     (.setContentPane mainframe split-pane)
     mainframe))
-
 
 (defn -main [& args]
   (show!
