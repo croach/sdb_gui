@@ -58,8 +58,12 @@
 (defn get-domains 
   "Returns a list of domains associated with the given account."
   [account-name]
-  (sdb/list-domains (get-client account-name)))
-
+  (let [client      (get-client account-name)
+        domains     (sdb/list-domains client)
+        item-counts (for [domain domains] 
+                        (:itemCount (sdb/domain-metadata client domain)))]
+    (zipmap domains item-counts)))
+                        
 (defn create-source-list
   "Creates the source list (aka, sidebar tree view) and populates it
    with all of the user's AWS accounts"
@@ -71,8 +75,10 @@
     (doseq [account-name accounts]
         (let [account-item (SourceListItem. account-name)]
             (.addItemToCategory model account-item category)
-            (doseq [domain-name (get-domains account-name)]
-                (.addItemToItem model (SourceListItem. domain-name) account-item))))
+            (doseq [[domain-name item-count] (get-domains account-name)]
+                (let [item (SourceListItem. domain-name)]
+                    (.setCounterValue item item-count)
+                    (.addItemToItem model item account-item)))))
     (doto (SourceList. model)
       (.installSourceListControlBar control-bar)
       (.setFocusable false))))
