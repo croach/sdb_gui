@@ -1,6 +1,7 @@
 (ns sdb_gui.core
   (:use (seesaw core mig))
   (:require [sdb_gui.accounts :as accounts])
+            ; [sdb_gui.sdb      :as sdb])
   (:require [cemerick.rummage :as sdb])
   (:import (javax.swing JSplitPane))
   (:import (com.explodingpixels.macwidgets SourceList
@@ -10,7 +11,22 @@
                                            SourceListControlBar
                                            MacWidgetFactory
                                            MacIcons)))
-
+                                           
+(def clients (atom {}))
+    
+(defn get-client
+    "Returns an SDB client if one already exists, otherwise, it creates
+     a new client, caches it, and returns the newly created client object."
+    [account-name]
+    (if-let [client (get @clients account-name)]
+        client
+        (let [account        (accounts/get-account account-name)
+              aws-access-key (:aws-access-key account)
+              aws-secret-key (:aws-secret-key account)
+              client         (sdb/create-client aws-access-key aws-secret-key)]
+            (swap! clients assoc account-name client)
+            client)))
+            
 (defn edit-account-panel []
   (mig-panel
    :constraints ["wrap, center, center"
@@ -40,13 +56,9 @@
     (show! (pack! dialog))))
 
 (defn get-domains 
-    "Returns a list of domains associated with the given account."
-    [account-name]
-    (let [account        (accounts/get-account account-name)
-          aws-access-key (:aws-access-key account)
-          aws-secret-key (:aws-secret-key account)
-          client         (sdb/create-client aws-access-key aws-secret-key)]
-          (sdb/list-domains client)))
+  "Returns a list of domains associated with the given account."
+  [account-name]
+  (sdb/list-domains (get-client account-name)))
 
 (defn create-source-list
   "Creates the source list (aka, sidebar tree view) and populates it
