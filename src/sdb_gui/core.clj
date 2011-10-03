@@ -1,7 +1,7 @@
 (ns sdb_gui.core
   (:use (seesaw core mig))
-  (:require [sdb_gui.accounts :as accounts]
-            [sdb_gui.sdb :as sdb])
+  (:require [sdb_gui.accounts :as accounts])
+  (:require [cemerick.rummage :as sdb])
   (:import (javax.swing JSplitPane))
   (:import (com.explodingpixels.macwidgets SourceList
                                            SourceListModel
@@ -23,14 +23,30 @@
              :hgap 0
              :vgap 0
              :align :right
-             :items [(button :text "Cancel")
-                     (button :text "Connect")]) "span"]]))
+             :items [(button :text "Cancel" :id :cancel)
+                     (button :text "Connect"
+                             :id :ok)]) "span"]]))
 
 (defn update-account
   "Add a new AWS account"
   [mainframe]
-  (let [content-panel (select mainframe [:#content-panel])]
-    (show-card! content-panel :account)))
+  (let [panel  (edit-account-panel)
+        dialog (custom-dialog :parent mainframe
+                              :modal? true
+                              :title "Account Info"
+                              :content (edit-account-panel))]
+    (.setDefaultButton (.getRootPane dialog)
+                       (select panel [:#ok]))
+    (show! (pack! dialog))))
+
+(defn get-domains 
+    "Returns a list of domains associated with the given account."
+    [account-name]
+    (let [account        (accounts/get-account account-name)
+          aws-access-key (:aws-access-key account)
+          aws-secret-key (:aws-secret-key account)
+          client         (sdb/create-client aws-access-key aws-secret-key)]
+          (sdb/list-domains client)))
 
 (defn create-source-list
   "Creates the source list (aka, sidebar tree view) and populates it
@@ -41,9 +57,13 @@
                    (.addCategory category))
         accounts (accounts/get-account-names)]
     (doseq [account-name accounts]
-      (.addItemToCategory model (SourceListItem. account-name) category))
+        (let [account-item (SourceListItem. account-name)]
+            (.addItemToCategory model account-item category)
+            (doseq [domain-name (get-domains account-name)]
+                (.addItemToItem model (SourceListItem. domain-name) account-item))))
     (doto (SourceList. model)
-      (.installSourceListControlBar control-bar))))
+      (.installSourceListControlBar control-bar)
+      (.setFocusable false))))
 
 (defn create-control-bar
   "Creates the control bar along the bottom of the source list"
