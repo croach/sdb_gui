@@ -9,6 +9,7 @@
                                            SourceListItem
                                            SourceListCategory
                                            SourceListControlBar
+                                           SourceListSelectionListener
                                            MacWidgetFactory
                                            MacIcons)))
                                            
@@ -63,6 +64,11 @@
         item-counts (for [domain domains] 
                         (:itemCount (sdb/domain-metadata client domain)))]
     (zipmap domains item-counts)))
+    
+(defn load-items 
+    "Loads the items for the given domain into the items table"
+    [domain-name]
+    (println (str "The domain selected was " domain-name)))
                         
 (defn create-source-list
   "Creates the source list (aka, sidebar tree view) and populates it
@@ -81,7 +87,11 @@
                     (.addItemToItem model item account-item)))))
     (doto (SourceList. model)
       (.installSourceListControlBar control-bar)
-      (.setFocusable false))))
+      (.setFocusable false)
+      (.addSourceListSelectionListener 
+          (proxy [SourceListSelectionListener] []
+              (sourceListItemSelected [item] 
+                  (load-items (.getText item))))))))
 
 (defn create-control-bar
   "Creates the control bar along the bottom of the source list"
