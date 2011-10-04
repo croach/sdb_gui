@@ -44,14 +44,22 @@
           p-size     (.getSize parent)
           x          (+ (.x p-location) (/ (.width p-size) 4))
           y          (+ (.y p-location) (/ (.height p-size) 4))
-          dlg (doto (dialog :parent parent
-                            :option-type :ok-cancel
-                            :title "Account Info"
-                            :success-fn (fn [p] (text (select p [:#account-name])))
-                            :content (edit-account-panel))
-                    (pack!)
-                    (.setLocation x y))]
-        (println (show! dlg))))
+          dlg        (doto (dialog :parent parent
+                                   :option-type :ok-cancel
+                                   :title "Account Info"
+                                   :success-fn (fn [p]
+                                       {
+                                           :account-name   (text (select p [:#account-name]))
+                                           :aws-access-key (text (select p [:#aws-access-key]))
+                                           :aws-secret-key (text (select p [:#aws-secret-key]))
+                                       })
+                                   :content (edit-account-panel))
+                           (pack!)
+                           (.setLocation x y))]
+        (let [acct-info (show! dlg)]
+            (accounts/add-account (:account-name acct-info)
+                                  :aws-access-key (:aws-access-key acct-info)
+                                  :aws-secret-key (:aws-secret-key acct-info)))))
 
 (defn get-domains
   "Returns a list of domains associated with the given account."
