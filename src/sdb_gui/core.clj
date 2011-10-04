@@ -12,9 +12,9 @@
                                            SourceListSelectionListener
                                            MacWidgetFactory
                                            MacIcons)))
-                                           
+
 (def clients (atom {}))
-    
+
 (defn get-client
     "Returns an SDB client if one already exists, otherwise, it creates
      a new client, caches it, and returns the newly created client object."
@@ -27,7 +27,7 @@
               client         (sdb/create-client aws-access-key aws-secret-key)]
             (swap! clients assoc account-name client)
             client)))
-            
+
 (defn edit-account-panel []
   (mig-panel
    :constraints ["wrap, center, center"
@@ -35,41 +35,38 @@
                  ""]
    :items [["Name"] [(text :id :account-name) "width 300!"]
            ["AWS Access Key"] [(text :id :aws-access-key) "width 300!"]
-           ["AWS Secret Key"] [(text :id :aws-secret-key) "width 300!"]
-           [(flow-panel
-             :hgap 0
-             :vgap 0
-             :align :right
-             :items [(button :text "Cancel" :id :cancel)
-                     (button :text "Connect"
-                             :id :ok)]) "span"]]))
+           ["AWS Secret Key"] [(text :id :aws-secret-key) "width 300!"]]))
 
 (defn update-account
-  "Add a new AWS account"
-  [mainframe]
-  (let [panel  (edit-account-panel)
-        dialog (custom-dialog :parent mainframe
-                              :modal? true
-                              :title "Account Info"
-                              :content (edit-account-panel))]
-    (.setDefaultButton (.getRootPane dialog)
-                       (select panel [:#ok]))
-    (show! (pack! dialog))))
+    "Add a new AWS account"
+    [parent]
+    (let [p-location (.getLocation parent)
+          p-size     (.getSize parent)
+          x          (+ (.x p-location) (/ (.width p-size) 4))
+          y          (+ (.y p-location) (/ (.height p-size) 4))
+          dlg (doto (dialog :parent parent
+                            :option-type :ok-cancel
+                            :title "Account Info"
+                            :success-fn (fn [p] (text (select p [:#account-name])))
+                            :content (edit-account-panel))
+                    (pack!)
+                    (.setLocation x y))]
+        (println (show! dlg))))
 
-(defn get-domains 
+(defn get-domains
   "Returns a list of domains associated with the given account."
   [account-name]
   (let [client      (get-client account-name)
         domains     (sdb/list-domains client)
-        item-counts (for [domain domains] 
+        item-counts (for [domain domains]
                         (:itemCount (sdb/domain-metadata client domain)))]
     (zipmap domains item-counts)))
-    
-(defn load-items 
+
+(defn load-items
     "Loads the items for the given domain into the items table"
     [domain-name]
     (println (str "The domain selected was " domain-name)))
-                        
+
 (defn create-source-list
   "Creates the source list (aka, sidebar tree view) and populates it
    with all of the user's AWS accounts"
@@ -88,9 +85,9 @@
     (doto (SourceList. model)
       (.installSourceListControlBar control-bar)
       (.setFocusable false)
-      (.addSourceListSelectionListener 
+      (.addSourceListSelectionListener
           (proxy [SourceListSelectionListener] []
-              (sourceListItemSelected [item] 
+              (sourceListItemSelected [item]
                   (load-items (.getText item))))))))
 
 (defn create-control-bar
