@@ -1,8 +1,8 @@
 (ns sdb_gui.core
   (:use (seesaw core mig))
-  (:require [sdb_gui.accounts :as accounts])
-            ; [sdb_gui.sdb      :as sdb])
-  (:require [cemerick.rummage :as sdb])
+  (:require [seesaw.selector :as sel])
+  (:require [sdb_gui.accounts :as accounts]
+            [sdb_gui.sdb      :as sdb])
   (:import (javax.swing JSplitPane))
   (:import (com.explodingpixels.macwidgets SourceList
                                            SourceListModel
@@ -28,7 +28,9 @@
             (swap! clients assoc account-name client)
             client)))
 
-(defn edit-account-panel []
+(defn edit-account-panel 
+    "Creates a form for editing/adding account information."
+    []
   (mig-panel
    :constraints ["wrap, center, center"
                  "[shrink, right] 10 [left]"
@@ -38,7 +40,7 @@
            ["AWS Secret Key"] [(text :id :aws-secret-key) "width 300!"]]))
 
 (defn update-account
-    "Add a new AWS account"
+    "Add/edit an AWS account"
     [parent]
     (let [p-location (.getLocation parent)
           p-size     (.getSize parent)
@@ -60,14 +62,19 @@
             (accounts/add-account (:account-name acct-info)
                                   :aws-access-key (:aws-access-key acct-info)
                                   :aws-secret-key (:aws-secret-key acct-info)))))
+                                  
+; (defn delete-domain
+;     "Removes the given domain from SimpleDB"
+;     [account-name domain-name]
+;     (sdb/delete-domain (get-client account-name) domain-name))
 
 (defn get-domains
   "Returns a list of domains associated with the given account."
   [account-name]
   (let [client      (get-client account-name)
         domains     (sdb/list-domains client)
-        item-counts (for [domain domains]
-                        (:itemCount (sdb/domain-metadata client domain)))]
+        item-counts (for [domain domains] 0)]
+                        ; (:itemCount (sdb/domain-metadata client domain)))]
     (zipmap domains item-counts)))
 
 (defn load-items
@@ -75,6 +82,12 @@
     [domain-name]
     (println (str "The domain selected was " domain-name)))
 
+; (defn update-source-list
+;     "Removes/adds accounts from/to the source list according to the
+;      user's current list of accounts."
+;     [mainframe]
+;     (let [source-list]))
+    
 (defn create-source-list
   "Creates the source list (aka, sidebar tree view) and populates it
    with all of the user's AWS accounts"
@@ -101,13 +114,13 @@
 (defn create-control-bar
   "Creates the control bar along the bottom of the source list"
   [mainframe]
-  (doto (SourceListControlBar.)
-    (.createAndAddButton
-     MacIcons/PLUS
-     (action :handler (fn [e] (update-account mainframe))))
-    (.createAndAddButton
-     MacIcons/MINUS
-     (action :handler (fn [e] (println "Removing an account"))))))
+  (sel/id-of! (doto (SourceListControlBar.)
+            (.createAndAddButton
+             MacIcons/PLUS
+             (action :handler (fn [e] (update-account mainframe))))
+            (.createAndAddButton
+             MacIcons/MINUS
+             (action :handler (fn [e] (println "Removing an account"))))) :source-list))
 
 (defn create-content-panel []
   "Creates the main content panel of the application which is a card layout
